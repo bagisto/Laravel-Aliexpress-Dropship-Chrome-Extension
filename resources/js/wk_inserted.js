@@ -39,6 +39,13 @@ window.onload = function() {
   var token = localStorage.aliexpress_import_token;
   var url = localStorage.aliexpress_import_url;
 
+  let siteStore;
+  if (host.includes("aliexpress.us")) {
+      siteStore = "us";
+  } else {
+      siteStore = "com";
+  }
+
   modal =
     '<div class="modal-overlay request-modal"><div class="modal-container"><div class="modal-header"><h3>Register Your Bagisto Store Url</h3></div><div class="modal-body"><div id="wk_info">If your store setup contains any folder then add that folder name like - ex. https://www.example.com/folder_name/</div><div class="input-block"><div class="input-label" <label>Store Url</label></div><div class="block-input"><input type="text" id="url" name="url" value="" /></div></div><div class="modal-footer"><button id="cancel-request-modal" class="cancel" type="button">Cancel</button><button id="request-submit" class="submit" type="button">Next</button></div></div></div>';
 
@@ -153,9 +160,9 @@ window.onload = function() {
         $.ajax({
           url:
             "https://feedback.aliexpress.com/display/productEvaluation.htm?v=2&productId=" +
-            productData.feedbackModule.productId +
+            productData.productInfoComponent.id +
             "&ownerMemberId=" +
-            productData.feedbackModule.sellerAdminSeq,
+            productData.productInfoComponent.adminSeq,
           dataType: "html",
           beforeSend: function() {
             showLoader();
@@ -203,17 +210,12 @@ window.onload = function() {
 
         success: function(response) {
           customOption = {};
-          product_meta_title = $(response)
-            .filter("title")
-            .text();
-          product_meta_desc = $(response)
-            .filter("meta[name=description]")
-            .attr("content");
-          product_meta_keywords = $(response)
-            .filter("meta[name=keywords]")
-            .attr("content");
+          product_name = $('.pdp-info-right').children("div").children("h1").text();
+          product_meta_title = window.runParams.data.metaDataComponent.title;
+          product_meta_desc = window.runParams.data.metaDataComponent.description;
+          product_meta_keywords = window.runParams.data.metaDataComponent.keywords;
+          
           var attrHtml = $(response).find("div#j-product-info-sku");
-
           // changes below
 
           if (attrHtml.length) {
@@ -343,8 +345,8 @@ window.onload = function() {
               }
             }
             if (productData != undefined) {
-              product_id = productData.storeModule.productId;
-              $.each(productData.skuModule.skuPriceList, function(ind, val) {
+              product_id = productData.productInfoComponent.id;
+              $.each(productData.priceComponent.skuPriceList, function(ind, val) {
                 let tempComb = val.skuPropIds.split(",").join("_");
                 let tempImg = "";
                 let tempQuantity = val.skuVal.availQuantity;
@@ -372,7 +374,7 @@ window.onload = function() {
                 if (val.skuAttr != undefined) {
                   $.each(val.skuAttr.split(";"), function(indx, valu) {
                     $.each(
-                      productData.skuModule.productSKUPropertyList,
+                      productData.skuComponent.productSKUPropertyList,
                       function(ind2, val2) {
                         $.each(val2.skuPropertyValues, function(ind3, val3) {
                           if (
@@ -406,9 +408,9 @@ window.onload = function() {
                   qty: tempQuantity
                 };
               });
-              imageThumbArr = productData.imageModule.imagePathList;
+              imageThumbArr = productData.imageComponent.imagePathList;
 
-              $.each(productData.skuModule.productSKUPropertyList, function(
+              $.each(productData.skuComponent.productSKUPropertyList, function(
                 ind4,
                 val4
               ) {
@@ -455,19 +457,19 @@ window.onload = function() {
               });
               (review_url =
                 "//feedback.aliexpress.com/display/productEvaluation.htm?v=2&productId=" +
-                productData.feedbackModule.productId +
+                productData.productInfoComponent.id +
                 "&ownerMemberId=" +
-                productData.feedbackModule.sellerAdminSeq),
+                productData.productInfoComponent.adminSeq),
                 (review_count = 0);
               if (
                 $("body").find(
-                  'span.product-reviewer-reviews[itemprop="reviewCount"]'
+                  'a.product-reviewer-reviews'
                 ).length > 0
               ) {
                 review_count = parseInt(
                   $("body")
                     .find(
-                      'span.product-reviewer-reviews[itemprop="reviewCount"]'
+                      'a.product-reviewer-reviews'
                     )
                     .text()
                 );
@@ -479,7 +481,7 @@ window.onload = function() {
                   review_count = 0;
                 }
               }
-              description_url = productData.descriptionModule.descriptionUrl;
+              description_url = productData.productDescComponent.descriptionUrl;
               hideLoader();
               resolve(true);
             } else {
@@ -546,11 +548,9 @@ window.onload = function() {
     });
 
     if (!notApplicable) {
-      // var qty = $(document)
-      //   .find("em[data-role='stock-num']")
-      //   .text()
-      //   .split(" ")[0];
+    
       var qty = tempQuantity;
+
       if ($(document).find("#j-multi-currency-price").length > 0) {
         customOption[comb] = {
           comb: comb,
@@ -775,6 +775,7 @@ window.onload = function() {
   var checkAttribute = function() {
     return new Promise(function(resolve, reject) {
       superAttrDetail = [];
+      
       $.ajax({
         url: url + "dropship/aliexpress/import-super-attributes",
         data: {
@@ -788,7 +789,6 @@ window.onload = function() {
 
         success: function(response) {
           hideLoader();
-
           if (response.success) {
             superAttrDetail = response.data;
 
@@ -1776,17 +1776,12 @@ window.onload = function() {
                     $.each(curr_sku_attr, function(index, value) {
                       if (value != 0) {
                         $.each(
-                          window.runParams.data.skuModule
+                          window.runParams.data.skuComponent
                             .productSKUPropertyList,
                           function(ind1, val1) {
-                            $.each(val1.skuPropertyValues, function(
-                              ind2,
-                              val2
-                            ) {
+                            $.each(val1.skuPropertyValues, function(ind2,val2) {
                               if (val2.propertyValueId == parseInt(value)) {
-                                if (
-                                  val1.isShowTypeColor &&
-                                  val1.skuPropertyName.toLowerCase() == "color"
+                                if (val1.isShowTypeColor && val1.skuPropertyName.toLowerCase() =="color"
                                 ) {
                                   // this block is for swatch images
                                   if (
@@ -1966,14 +1961,11 @@ window.onload = function() {
                         );
                         customUrl = customUrl.replace(sku_attr, new_sku_attr);
                       }
-
+                      $('.add-to-cart--addtocart--RXmuNXk').trigger('click');
                       location = customUrl;
                     } else {
-                      location =
-                        "https://shoppingcart.aliexpress.com/shopcart/shopcartDetail.htm?wk_order_id=" +
-                        current_order_id +
-                        "&wk_url=" +
-                        url;
+                      $('.add-to-cart--addtocart--RXmuNXk').trigger('click');
+                      location = "https://shoppingcart.aliexpress."+siteStore+"/shopcart/shopcartDetail.htm?wk_order_id=" + current_order_id + '&wk_url=' + url;
                     }
                   })
                   .catch(function(response) {
