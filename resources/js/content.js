@@ -89,7 +89,7 @@ $(".detail-wrap")
       '" class="import-icon" title="Click Here To Import" id="addToStoreButtonProduct" /></div>'
   );
 
-$(".product-main-wrap > .product-info")
+$(".product-main .product-info")
   .css({
     border: "1px solid blue",
     position: "relative"
@@ -130,4 +130,8 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 
     default:
   }
+});
+
+$('.title--wrap--Ms9Zv4A').before('<div class="wk_dropshipper"><img src="' + importIcon + '" class="import-icon" title="Click Here To Import" id="addToStoreButtonProduct" style="position: relative;  right: -4px !important;top:-76px !important; z-index:1; float:right; display:block !important;"/></div>').parent().css({
+  border: '1px solid blue',
 });
